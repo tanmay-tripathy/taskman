@@ -1,57 +1,59 @@
 const express = require('express')
+const dotenv = require('dotenv');
+dotenv.config();
 const app = express();
 const cors = require('cors');
 app.use(express.json());
 app.use(cors());
 app.use(express.static('client'));
+app.use(express.urlencoded({extended: true}));
+const PORT = process.env.PORT || 8080;
 
-// app.get('/get',(req,res)=>{
-
-// })
-
-const admin = require("firebase-admin");
-
+const admin = require('firebase-admin');
+const serviceAccount = require('./key.json');
 admin.initializeApp({
-  credential: admin.credential.cert("./taskman-6def0-firebase-adminsdk-d2d3a-4d5f938e9e.json")
+  credential: admin.credential.cert(serviceAccount)
 });
-
-console.log('Firebase App connected ... ');
-
 const db = admin.firestore();
 
-console.log("Firestore Connected ... ");
+// POST create
+app.post('/create', async (req,res)=>{
+    try {
+        console.log(typeof(req.body.colName));
+        console.log(typeof(req.body.data));
+        const response = await db.collection(req.body.colName).add(req.body.data);
+        res.send(`Document written with id : ${response.id}`);
+    } catch(err) {
+        res.send(err);
+    }
+});
 
-async function add() {
-    return ret = await db.collection('users').add({
-        "name": "rohit dhakad",
-        "sex": "male",
-        "age": 69
-    });
-}
+// GET read collection
+app.get('/read/:collection',async(req,res)=>{
+    try {
+        const response = await db.collection(req.params.collection).get();
+        let ret = []; 
+        response.forEach((doc)=>{
+            ret.push(doc.data());
+        });
+        res.send(ret);
+    } catch (err) {
+        res.send(err);
+    }
+});
 
-app.post('/create',(req,res,next)=>{
-    // console.log(req.body);
-    // const ret = db.collection('users').add({
-    //     "name": "rohit dhakad",
-    //     "sex": "male",
-    //     "age": 69
-    // })
-    // .then(response => {
-    //     console.log('in the data ');
-    //     return {id : response.id};
-    // })
-    // .catch(err => {
-    //     console.log(err);
-    //     return {error : err};
-    // });
-    // console.log(ret);
-    // res.json(ret);
-    // console.log(db);
-    const ret = add();
-    console.log(ret);
-    ret.then(doc=>console.log(doc)).catch(err=>console.log(err));
-    res.status(200).json({});
-})
+// GET read document
+app.get('/read/:collection/:id',async(req,res)=>{
+    try {
+        const response = await db.collection(req.params.collection).get();
+        let ret = []; 
+        response.forEach((doc)=>{
+            doc.id === req.params.id && ret.push(doc.data());
+        });
+        res.send(ret);
+    } catch (err) {
+        res.send(err)
+    }
+});
 
-PORT = process.env.PORT || 3000;
 app.listen(PORT,()=>{console.log(`Up and running at http://localhost:${PORT}`)});
