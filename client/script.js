@@ -31,11 +31,7 @@ cmd.onkeydown = (e) => {
     localStorage.setItem('pos',pos);
 }
 
-document.onmousedown = (e)=>{
-    e.preventDefault();
-}
-
-command.addEventListener(('submit'),(e)=>{
+command.onsubmit = async (e)=>{
     e.preventDefault();
 
     let input = cmd.value;
@@ -45,24 +41,29 @@ command.addEventListener(('submit'),(e)=>{
 
     command_input.innerHTML = `<span>> </span>${input}`;
     container.appendChild(command_input);
-    
-    let out = process(input);
+    cmd.value = '';
+
+    command.style = 'visibility: hidden;';
+    const out = await process(input);
     container.appendChild(out);
+    console.log('append out');
+    command.style = 'visibility: visible;';    
+    cmd.focus();
+}
 
-    document.getElementById('cmd').value = '';
-})
-
-let process = (input) => {
-    let out = document.createElement('p');
+let process = async (input) => {
+    let out = document.createElement('div');
+    out.classList.add('out');
     const token = localStorage.getItem('history');
     let cache = [];
     if(token !== null) cache = JSON.parse(token);
     cache.push(input);
 
-    switch(input){
+    const inputs = input.split(" ");
+    console.log(inputs);
+    switch(inputs[0]){
         case "--help": {
             out.innerHTML = "Wait for it ...";
-            out.classList.add('out');
             break;
         }
         case "clear": {
@@ -79,13 +80,31 @@ let process = (input) => {
         //     out.classList.add('out');
         //     break;
         // }
-        // case "get":{
-        //     getDocument('users');
-        //     break;
-        // }
+        case "get":{
+            const url = `http://localhost:3000/read/${inputs[1]}`;
+            
+            try {
+                const response = await fetch(url);
+                const docs = await response.json();
+                let table = document.createElement('table');
+                let tr = document.createElement('tr');
+                tr.innerHTML = '<th>Name</th><th>Sex</th><th>Age</th>';
+                table.appendChild(tr);
+                docs.forEach(data => {
+                    tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${data.name}</td><td>${data.sex}</td><td>${data.age}</td>`;
+                    table.appendChild(tr);
+                });
+                out.appendChild(table);
+            } catch (error) {
+                out.innerHTML = error;
+                out.classList.add('err');
+            }
+            break;
+        }
         default : {
             out.innerHTML = 'Invalid command. See a list of all commands using <span style="color: var(--bg-light)">--help</span> command ...';
-            out.classList.add('err','out');
+            out.classList.add('err');
             break;
         }
     }

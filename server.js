@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 app.use(express.static('client'));
 app.use(express.urlencoded({extended: true}));
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 3000;
 
 const admin = require('firebase-admin');
 const serviceAccount = require('./key.json');
